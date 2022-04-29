@@ -42,22 +42,35 @@ else:
                 BulletinQuery = requests.get(BulletinURL, headers=Header)
         BulletinData = json.loads(BulletinQuery.text)
         print('Number of Devices: ', BulletinData['@odata.count'])
+        VulnRefList.append(bulletin)
+        VulnResultList.append(BulletinData['value'])
         BulletinCount = floor(BulletinData['@odata.count']/100)
+        print('Bulletin Count: ', BulletinCount)
         if BulletinCount > 0:
-            for i in range(1, BulletinCount):
-                VulnRefList.append(bulletin + str(i))
-                VulnResultList.append(BulletinData['value'])
-                BulletinURL = "https://mluprd-sfc.ivanticloud.com/api/PatchContent/odata/devices?BulletinId=" + bulletin + "&%24top=100&$skip=" + str(i*100)
+            if BulletinCount == 1:
+                BulletinURL = "https://mluprd-sfc.ivanticloud.com/api/PatchContent/odata/devices?BulletinId=" + bulletin + "&%24top=100&$skip=100"
                 BulletinQuery = requests.get(BulletinURL, headers=Header)
-                print('Querying batch ', str((i+1)*100))
+                print('Querying batch ', str(100))
                 if str(BulletinQuery) == '<Response [401]>':
                     Bearer = input('Bearer Token expired, please enter a fresh one:')
                     Header = {'Uno.TenantId': TenantID, 'Authorization': Bearer}
                     BulletinQuery = requests.get(BulletinURL, headers=Header)
                 BulletinData = json.loads(BulletinQuery.text)
-        else:
-            VulnRefList.append(bulletin)
-            VulnResultList.append(BulletinData['value'])
+                VulnRefList.append(bulletin + str(1))
+                VulnResultList.append(BulletinData['value'])
+            else:
+                for i in range(1, BulletinCount):
+                    BulletinURL = "https://mluprd-sfc.ivanticloud.com/api/PatchContent/odata/devices?BulletinId=" + bulletin + "&%24top=100&$skip=" + str(i*100)
+                    BulletinQuery = requests.get(BulletinURL, headers=Header)
+                    print('Querying batch ', str((i+1)*100))
+                    if str(BulletinQuery) == '<Response [401]>':
+                        Bearer = input('Bearer Token expired, please enter a fresh one:')
+                        Header = {'Uno.TenantId': TenantID, 'Authorization': Bearer}
+                        BulletinQuery = requests.get(BulletinURL, headers=Header)
+                    BulletinData = json.loads(BulletinQuery.text)
+                    VulnRefList.append(bulletin + str(i))
+                    VulnResultList.append(BulletinData['value'])
+            
 
     for i in range(len(VulnRefList)):
         print('Processing ', VulnRefList[i])
